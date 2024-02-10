@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn } from "typeorm";
-import { IsArray, IsBoolean, IsEmail, IsString, MinLength } from 'class-validator';
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('users')
 export class User {
@@ -7,24 +6,24 @@ export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @IsEmail()
+    @Column('text', {
+        unique: true
+    })
     email: string
 
-    @IsString()
-    @MinLength(6)
+    @Column('text')
     password: string
 
-    @IsString()
-    fullName: string
+    @Column('text')
+    fullname: string
 
-    @IsBoolean()
+    @Column('bool')
     isActive: boolean;
 
-
-    @IsString({
-        each: true
+    @Column('text', {
+        array: true,
+        default: ['user']
     })
-    @IsArray()
     roles: string[]
 
 }
