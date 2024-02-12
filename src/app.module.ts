@@ -16,17 +16,7 @@ import typeorm from './config/typeorm.config';
         isGlobal: true,
         load: [typeorm]
       }
-    ),
-    // TypeOrmModule.forRoot({
-    //   type: 'postgres',
-    //   host: process.env.HOST_DB,
-    //   port: +process.env.PORT_DB,
-    //   username: process.env.USERNAME_DB,
-    //   password: process.env.PASSWORD_DB,
-    //   database: process.env.NAME_DB,
-    //   autoLoadEntities: true,
-    //   synchronize: false,    
-    // }),
+    ),    
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => (configService.get('typeorm'))
