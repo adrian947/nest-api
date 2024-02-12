@@ -45,8 +45,7 @@ npm run migration:revert
 
 Explore the following documentation for detailed information on endpoints and usage:
 
-- **Postman Documentation:**
-  - [Documentation Swagger](https://documenter.getpostman.com/view/14487673/2sA2r3aRvh)
+- **Postman Documentation:** [Documentation Postman](https://documenter.getpostman.com/view/14487673/2sA2r3aRvh)
 
 - **Swagger Documentation:**
   - The API is hosted at `YOUR_HOST/api`.
