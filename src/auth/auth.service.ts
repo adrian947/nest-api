@@ -1,8 +1,12 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { hashSync, compareSync } from 'bcrypt'
+import { LoginUserDto } from './dto/login-user.dto';
+import { JWTPayload } from './interfaces/jwt-payload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 
 @Injectable()
@@ -12,38 +16,69 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
+
   ) { }
 
+  private getJwtToken(payload: JWTPayload) {
+    const token = this.jwtService.sign(payload)
+    return token;
+  }
 
   async register(createUserDto: CreateUserDto) {
     try {
-      const user = this.userRepository.create(createUserDto)
-      await this.userRepository.save(user)
 
-      return user;
+      const { password, ...userData } = createUserDto
+
+      const user = this.userRepository.create({
+        ...userData,
+        password: hashSync(password, 10)
+      })
+      await this.userRepository.save(user);
+      delete user.password;
+
+      return {
+        ...user,
+        token: this.getJwtToken({ id: user.id })
+      };
+
     } catch (error) {
       this.handleExceptions(error);
     }
   }
-  // create(createAuthDto: CreateAuthDto) {
-  //   return 'This action adds a new auth';
-  // }
 
-  // findAll() {
-  //   return `This action returns all auth`;
-  // }
+  async login(loginAuthDto: LoginUserDto) {
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} auth`;
-  // }
+    const { password, email } = loginAuthDto;
 
-  // update(id: number, updateAuthDto: UpdateAuthDto) {
-  //   return `This action updates a #${id} auth`;
-  // }
+    const user = await this.userRepository.findOne({
+      where: { email },
+      select: { id: true, password: true }
+    })
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} auth`;
-  // }
+    if (!user) {
+      throw new UnauthorizedException('Not valid creadentials')
+    }
+
+    if (!compareSync(password, user.password)) {
+      throw new UnauthorizedException('Not valid creadentials')
+    }
+    delete user.password;
+
+    return {
+      ...user,
+      token: this.getJwtToken({ id: user.id })
+    };
+  }
+
+  checkAuthStatus(user: User) {
+    const token = this.getJwtToken({ id: user.id })
+
+    return {
+      ...user,
+      token
+    }
+  }
 
   private handleExceptions(error: any): never {
     if (error.code === '23505')

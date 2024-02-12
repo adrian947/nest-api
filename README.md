@@ -12,3 +12,7 @@ docker compose up -d
 
 - Copiar el archivo .env.template y cambiar nompre a .env para completar las vars de entorno
 - Ejecutar seed para llenar la db
+
+
+
+npm run migration:create --name=add-column-userId

@@ -1,6 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req, SetMetadata } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from './decorators/get-user.decorator';
+import { User } from './entities/user.entity';
+import { GetRawHeaders } from './decorators/get-raw-headers.decoratos';
+import { UserRoleGuard } from './guards/user-role/user-role.guard';
+import { RoleProtected } from './decorators/role-protected.decorator';
+import { ValidRoles } from './interfaces/valid-roles-interface';
+import { Auth } from './decorators/auth.decorator';
 
 
 @Controller('auth')
@@ -9,35 +18,62 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  // @Post()
-  // create(@Body() createAuthDto: CreateAuthDto) {
-  //   return this.authService.create(createAuthDto);
-  // }
-
   @Post('register')
   register(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.authService.findAll();
-  // }
+  @Post('login')
+  login(@Body() loginAuthDto: LoginUserDto) {
+    return this.authService.login(loginAuthDto);
+  }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.authService.findOne(+id);
-  // }
+  @Get('test')
+  @UseGuards(AuthGuard())
+  testPrivateRoute(    
+    @GetUser() user: User,
+    @GetUser('email') userEmail: string,
+    @GetRawHeaders() rawHeaders: string[]
+  ){    
+    return {
+      ok: true,
+      user,
+      userEmail,
+      rawHeaders,
+    }
+  }  
+  // @SetMetadata('roles', ['admin', 'superuser'])
+  @Get('test2')
+  @RoleProtected(ValidRoles.superuser, ValidRoles.admin)
+  @UseGuards(AuthGuard(), UserRoleGuard)
+  testPrivateRoute2(    
+    @GetUser() user: User,
+    // @GetUser('email') userEmail: string,
+    // @GetRawHeaders() rawHeaders: string[]
+  ){    
+    return {
+      ok: true,
+      user
+    }
+  }  
+  @Get('test3')
+  @Auth(ValidRoles.all)
+  testPrivateRoute3(    
+    @GetUser() user: User,   
+  ){    
+    return {
+      ok: true,
+      user
+    }
+  }  
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-  //   return this.authService.update(+id, updateAuthDto);
-  // }
+  @Get('check-status')
+  @Auth(ValidRoles.all)
+  checkAuthStatus(
+    @GetUser() user: User
+  ){
+    return this.authService.checkAuthStatus(user)
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.authService.remove(+id);
-  // }
 
- 
 }

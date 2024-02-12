@@ -22,6 +22,8 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { CloudinaryDTO } from './dto/cloudinary.dto';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { ValidRoles } from 'src/auth/interfaces/valid-roles-interface';
 
 
 @Controller('files')
@@ -34,6 +36,7 @@ export class FilesController {
   ) { }
 
   @Get('product/:imageName')
+  @Auth(ValidRoles.all)
   async findOneImage(
     @Param('imageName') imageName: string,
     @Res() res: Response,
@@ -55,6 +58,7 @@ export class FilesController {
 
 
   @Post('product')
+  @Auth(ValidRoles.all)
   @UseInterceptors(FileInterceptor('file', {
     fileFilter: fileFilter,
     storage: diskStorage({
