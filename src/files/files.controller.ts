@@ -43,8 +43,7 @@ export class FilesController {
     @Res() res: Response,
     @Query('cloudinary', new ParseBoolPipe({ optional: true })) cloudinary: CloudinaryDTO) {
     const path = this.filesService.getStaticProductImage(imageName)
-
-
+    
     if (cloudinary) {
       const imageCloudinary = await this.cloudinaryService.getImageUrl(imageName)
 

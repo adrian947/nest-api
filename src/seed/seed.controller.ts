@@ -12,8 +12,9 @@ export class SeedController {
   @ApiResponse({ status: 200, description: 'Seed Executed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @Get()
-  @Auth(ValidRoles.superuser)
+  // @Auth(ValidRoles.superuser)
   executeSeed() {
+    console.log('llega100', )
     return this.seedService.runSeed();
   }  
 }

@@ -7,6 +7,7 @@ import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AuthModule } from './auth/auth.module';
+import { MessagesWsModule } from './messages-ws/messages-ws.module';
 import typeorm from './config/typeorm.config';
 
 @Module({
@@ -26,7 +27,8 @@ import typeorm from './config/typeorm.config';
     SeedModule,
     FilesModule,
     CloudinaryModule,
-    AuthModule,],
+    AuthModule,
+    MessagesWsModule,],
 })
 
 export class AppModule { }

@@ -26,6 +26,7 @@ export class SeedService {
 
     const seedProducts = initialData.products
     const seedUsers = initialData.users
+    
 
     const userWithHashPassword = seedUsers.map(user => ({
       ...user,
