@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Socket } from 'socket.io';
+import { User } from 'src/auth/entities/user.entity';
+import { Repository } from 'typeorm';
 
 interface ConnectedClients {
-    [id: string]: Socket
+    [id: string]: {
+        socket:Socket,
+        user: User
+    }
 }
 
 
@@ -10,15 +16,42 @@ interface ConnectedClients {
 export class MessagesWsService {
     private connectedClients: ConnectedClients = {}
 
-    registerClient(client: Socket) {
-        this.connectedClients[client.id] = client
+    constructor(
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>
+    ) { }
+
+
+    async registerClient(client: Socket, userId: string) {
+        const user = await this.userRepository.findOneBy({ id: userId })
+        if (!user) throw new Error('User not found');
+        if (!user.isActive) throw new Error('User not active');
+        this.checkUserConnection(user);
+        this.connectedClients[client.id] = {
+            socket: client,
+            user
+        }
 
     }
     removeClient(clientId: string) {
         delete this.connectedClients[clientId]
     }
 
-    getConnectedClients():number {
-        return Object.keys(this.connectedClients).length
+    getConnectedClients(): string[] {        
+        return Object.keys(this.connectedClients)
+    }
+
+    getUserFullNameBySocketId(socketId: string){
+        return this.connectedClients[socketId].user.fullname
+    }
+
+    private checkUserConnection(user: User){
+        for (const clientId of Object.keys(this.connectedClients)) {
+            const connnectedClient = this.connectedClients[clientId];
+            if(connnectedClient.user.id === user.id){
+                connnectedClient.socket.disconnect();
+                break;
+            }
+        }
     }
 }
