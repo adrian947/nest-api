@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 
 interface ConnectedClients {
     [id: string]: {
-        socket:Socket,
+        socket: Socket,
         user: User
     }
 }
@@ -37,18 +37,21 @@ export class MessagesWsService {
         delete this.connectedClients[clientId]
     }
 
-    getConnectedClients(): string[] {        
+    getConnectedClients(): string[] {
         return Object.keys(this.connectedClients)
     }
 
-    getUserFullNameBySocketId(socketId: string){
-        return this.connectedClients[socketId].user.fullname
+    getUserFullNameAndSocketId(socketId: string) {
+        return {
+            fullname:
+                this.connectedClients[socketId].user.fullname, socketId
+        }
     }
 
-    private checkUserConnection(user: User){
+    private checkUserConnection(user: User) {
         for (const clientId of Object.keys(this.connectedClients)) {
             const connnectedClient = this.connectedClients[clientId];
-            if(connnectedClient.user.id === user.id){
+            if (connnectedClient.user.id === user.id) {
                 connnectedClient.socket.disconnect();
                 break;
             }

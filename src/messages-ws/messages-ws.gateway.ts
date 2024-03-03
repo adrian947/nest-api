@@ -17,7 +17,6 @@ export class MessagesWsGateway implements OnGatewayConnection, OnGatewayDisconne
 
   validateToken(client: Socket) {
     const token = client.handshake.headers.authentication as string
-    console.log("🚀 ~ token:", token)
     try {
       const valid = this.jwtService.verify(token);
 
@@ -28,37 +27,61 @@ export class MessagesWsGateway implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
-
-
   async handleConnection(client: Socket) {
     const userId = this.validateToken(client)
-
     if (!userId) {
-      
       this.handleDisconnect(client);
     }
+
     await this.messagesWsService.registerClient(client, userId)
-    console.log('connected clients', this.messagesWsService.getConnectedClients())
+
     this.wss.emit('clients-updated', this.messagesWsService.getConnectedClients().map((idSocket: string) => (
-      this.messagesWsService.getUserFullNameBySocketId(idSocket)
+      this.messagesWsService.getUserFullNameAndSocketId(idSocket)
     )))
 
   }
   handleDisconnect(client: Socket) {
-    // console.log('cliente disconnet', client.id)
     this.messagesWsService.removeClient(client.id)
     this.wss.emit('clients-updated', this.messagesWsService.getConnectedClients().map((idSocket: string) => (
-      this.messagesWsService.getUserFullNameBySocketId(idSocket)
+      this.messagesWsService.getUserFullNameAndSocketId(idSocket)
     )))
     console.log('Disconnect clients', this.messagesWsService.getConnectedClients())
   }
 
+  //! Este método se invocará cuando desees enviar un mensaje a un socket específico.
+  sendToSocket(socketId: string, message: string, fullname: string) {
+    const socket = this.wss.sockets.sockets.get(socketId);
+
+    if (socket) {
+      socket.emit('message-from-server', {
+        fullName: fullname,
+        message: message
+      })
+    } else {
+      console.error(`Socket not found: ${socketId}`);
+    }
+  }
+
+
+  @SubscribeMessage('send-message-to-client')
+  handleMessage(client: Socket, payload: any) {
+    const userAndSocket = this.messagesWsService.getUserFullNameAndSocketId(client.id)
+
+    client.emit('message-from-server', {
+      fullName: userAndSocket.fullname,
+      message: payload.message
+    })
+
+    const targetSocketId = payload.id;
+    const messageToTargetSocket = payload.message;
+    const fullname = userAndSocket.fullname;
+    this.sendToSocket(targetSocketId, messageToTargetSocket, fullname);
+  }
+
+
   @SubscribeMessage('message-from-client')
   handleMessageFromClient(client: Socket, payload: NewMessageDto) {
-
-    console.log("🚀 ~ client.id:", client.id)
-    const user = this.messagesWsService.getUserFullNameBySocketId(client.id)
-    console.log("🚀 ~ user:", user)
+    const userAndSocket = this.messagesWsService.getUserFullNameAndSocketId(client.id)
     //! emite unicamente al cliente que envia el mensaje
     // client.emit('message-from-server',{
     //   fullName: 'Soy yo!',
@@ -73,7 +96,7 @@ export class MessagesWsGateway implements OnGatewayConnection, OnGatewayDisconne
 
     //! emitir a todos incluyendome a mi
     this.wss.emit('message-from-server', {
-      fullName: user,
+      fullName: userAndSocket.fullname,
       message: payload.message
     })
   }
